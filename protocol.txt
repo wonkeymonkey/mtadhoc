@@ -1,0 +1,22 @@
+Right now only discovery-request has been redone,
+others pending
+
+Currently a Packet includes: source, destination, type, data. Right now the design includes the following packet types, not all have been reimplemented:
+
+
+===Multicast===
+discovery-request    :Request all unlisted nodes reply with a discovery-response, known nodes will be listed in the data block
+
+===Unicast===
+discovery-response   :
+
+known-request        :Request a node reply with all of its known nodes, this allows nodes to be aware of stations outside of their transmit radius
+known-response       :Known stations are included in the data block
+
+relay-request        :Request a specific node transmit a packet contained in the data block
+
+
+chain-size-request   :Really simple "hashchain" implementation
+chain-size-response
+chain-data-pull
+chain-data-push
