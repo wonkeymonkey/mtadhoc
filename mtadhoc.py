@@ -5,7 +5,7 @@ from math import sqrt, pi, log
 from time import sleep, time
 import dill
 
-from mtstations import Station
+from mtstations import Station, ImaginaryStation
     
 
 class Airspace:
@@ -116,6 +116,12 @@ class Airspace:
                 frozen, sid = q.get()
                 self.frozenStations.append((frozen, sid))
 
+        #TODO: check for lost stations here,
+        #If a station isn't returned for whatever reason
+        #don't overwrite the unfrozen copy
+        #this will revert all of it's data to the last time we unfroze
+        #but thats better than losing it completely
+
         self.unfreeze()
                 
         
@@ -132,7 +138,8 @@ class Airspace:
         d = loads(packet)
         dst = d.get('dst')
         typ = d.get('typ')
-        print(f"{sid} --> {dst} [{typ}]")
+        data = d.get('data')
+        print(f"{sid} --> {dst} [{typ}]--|{data}")
         for destsid, rxpower in self.rdict[sid]:
             self.inqdict[destsid].put(packet)
 
@@ -174,6 +181,16 @@ class Airspace:
     def dedup(self):
         pass
 
+    def checkStationKnownRoutes(self):
+        count = len(self.stations)
+        for s in self.stations:
+            if len(s.known.keys()) != count:
+                break
+        else:
+            print("All stations have found each other!")
+            return
+        
+
 
 if __name__ == "__main__":
 
@@ -187,11 +204,14 @@ if __name__ == "__main__":
     
     a = Airspace()
 
-    #The transmit limit is about 100, so these 4 nodes can't all transmit to each other
-    a.makeStation([(0,0),(100,100), (200,200), (300,300)])
+    #The transmit limit is about 150 units, so these nodes can only transmit 1 hop away
+    a.makeStation([ (i,i) for i in range(0,800,100) ])
+    #a.makeStation([(0,0),(100,100), (200,200), (300,300)])
 
     print({ k:[sid for sid,rxpower in p] for k,p in a.rdict.items() })
     sleep(2)
       
+    a(60) #Run for a minute
+    print(a.checkStationKnownRoutes()) #Check if all of the stations have discovered each other
     a(300) #Run for 5 minutes
-
+    print(a.checkStationKnownRoutes())
