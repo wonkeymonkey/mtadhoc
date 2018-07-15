@@ -118,13 +118,34 @@ class Airspace:
             print(recoveredStationCount,end=' ', flush=True)
         print("Stopped!")
 
-                
+
+    def _goSinglethread(self, seconds):
+        try:
+            self.stations.clear()
+            for frozenStation, sid in self.frozenStations:
+                inputq, outputq = Queue(), Queue()
+                self.inputQueues[sid] = inputq
+                self.outputQueues[sid] = outputq
+                station = dill.loads(frozenStation)
+                station._unfreeze((inputq,outputq))
+                self.stations.append(station)
+
+            print("Starting!")
+            endtime = time() + seconds
+            while time() < endtime:
+                for s in self.stations:
+                    s()
+                self.processPackets()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            print("Stopping!")
+            self._freeze()
+            
 
         
     def __call__(self, seconds=300):
-
-        self._freeze()
-
+        
         if self.multithread:
             if "idlelib.run" in sys.modules:
                 print("Can't multiprocess while running in IDLE! Dropping to a single thread...", file=sys.stderr)
@@ -132,13 +153,13 @@ class Airspace:
                 self.multithread = False
 
         self.routes.updateRanges()
+        self._freeze()
         if self.multithread:
             self._goMultithread(seconds)
         else:
-            raise NotImplemented
-            #self._goSinglethread(seconds)
-
+            self._goSinglethread(seconds)
         self._unfreeze()
+
 
 
         
@@ -175,7 +196,9 @@ if __name__ == "__main__":
 
     
     a = Airspace()
-    a.makeStations( [(0,0), (100,100)] )
+    #a.makeStations( [(0,0), (100,100)] )
+    a.makeStations( [(x,y) for x in range(0,400,100) for y in range(0,400,100)])
+    a.routes.displayRanges()
 
 
 

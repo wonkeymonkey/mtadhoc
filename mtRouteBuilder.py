@@ -89,8 +89,9 @@ class AirspaceRouteBuilder:
     def __init__(self, positionDict, transmitRange):
         self.positionDict = positionDict
         self.transmitRange = transmitRange
-
         self.ranges = {}
+        self.G = None
+        
 
     @staticmethod
     def distance(sourcexy, destxy):
@@ -98,7 +99,9 @@ class AirspaceRouteBuilder:
         d = sqrt(((sx-dx)**2) + ((sy-dy)**2) )
         return d
 
+
     def updateRanges(self):
+        g = nx.empty_graph()
         self.ranges.clear()
         for sid, sxy in self.positionDict.items():
             self.ranges[sid] = []
@@ -106,7 +109,14 @@ class AirspaceRouteBuilder:
                 if did != sid:
                     if self.distance(sxy, dxy) < self.transmitRange:
                         self.ranges[sid].append(did)
+                        g.add_edge(sid, did)
+        self.G = g
 
 
     def inRange(self, sid):
         return self.ranges.get(sid, [])
+
+
+    def displayRanges(self):
+        nx.draw(self.G, with_labels=True)
+        plt.show()
