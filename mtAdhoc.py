@@ -3,6 +3,7 @@ import dill
 from multiprocessing import Process, Queue
 from time import sleep, time
 import sys
+import json
 
 
 from mtStations import Station
@@ -49,7 +50,7 @@ class Airspace:
         while stopQueue.empty():
             try:
                 station()
-                sleep(0.1)
+                sleep(0.2)
             except KeyboardInterrupt:
                 pass
 
@@ -115,7 +116,6 @@ class Airspace:
             frozenStation, sid = returnQueue.get(timeout=20)
             self.frozenStations.append((frozenStation, sid))
             recoveredStationCount += 1
-            print(recoveredStationCount,end=' ', flush=True)
         print("Stopped!")
 
 
@@ -136,6 +136,7 @@ class Airspace:
                 for s in self.stations:
                     s()
                 self.processPackets()
+                sleep(0.2)
         except KeyboardInterrupt:
             pass
         finally:
@@ -144,7 +145,7 @@ class Airspace:
             
 
         
-    def __call__(self, seconds=300):
+    def __call__(self, seconds=5):
         
         if self.multithread:
             if "idlelib.run" in sys.modules:
@@ -172,9 +173,14 @@ class Airspace:
 
     def send(self, packet, sid):
         #Debugging messages can go here
+        d = json.loads(packet)
+        src = sid
+        dst = d.get('header').get('dst')
+        print(f"{src} --> {dst}")
+
         
         for destination in self.routes.inRange(sid):
-            self.inputQueue[destination].put(packet)
+            self.inputQueues[destination].put(packet)
         
 
     def makeStations(self, pos):
@@ -196,9 +202,13 @@ if __name__ == "__main__":
 
     
     a = Airspace()
-    #a.makeStations( [(0,0), (100,100)] )
     a.makeStations( [(x,y) for x in range(0,400,100) for y in range(0,400,100)])
     a.routes.displayRanges()
+
+
+    #Call Airspace to run, accepts number of seconds to run as an argument
+    a(10)
+    
 
 
 

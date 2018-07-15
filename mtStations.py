@@ -49,11 +49,15 @@ class Station:
                 self.processPacket(p)
             except Exception as e:
                 print(f"Error working with packet on ${self.mysid}, {e}", file=sys.stderr)
-        
-        
+
+        if self.clock % 30 == self.mysid:
+            p = self.Packets()
+            p.routing = ["multicast!"]
+            self.send(p)
+
     def processPacket(self, p):
         mysid = self.mysid
-        if p.header['dest'] == mysid:
+        if p.header['dst'] == mysid:
             if p.routing[-1] == mysid:
                 #This packet is for us! Process it
                 resp = self.incoming(p.body)
