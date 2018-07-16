@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import json
 from math import sqrt
+from collections import defaultdict
 
 from secrets import SystemRandom
 sr = SystemRandom()
@@ -13,9 +14,12 @@ class RouteBuilder:
         self.mysid = mysid
 
         # sid -> [stationinrange,]
-        self.routeables = {}
+        self.routeables = defaultdict(list)
         # sid -> [possibleroutes,]
         self.builtRoutes = {}
+
+        # Stores all known stations
+        self.known = set()
         
         # sid -> sessionID
         self.sessions = {} # This isn't used right now, but once encryption is implemented session data will be important
@@ -42,14 +46,38 @@ class RouteBuilder:
                 for path in paths:
                     path.remove(mysid)
                 self.builtRoutes[sid] = paths
+        self.G = g
+
+        if mysid == 0:
+            plt.cla()
+            nx.draw(g, with_labels=True)
+            plt.show()
+            plt.pause(0.1)
 
 
-    def updateRouteable(self, sid, updated):
-        if isinstance(updated, list):
-            self.routeables[sid] = updated
-            self.rebuildRoutes()
-        else:
+    def updateRouteable(self, sid, updated, clearPrevious=False):
+        if not isinstance(updated, list):
             raise TypeError
+
+        change = self.routeables[sid].copy()
+
+        if clearPrevious == True:
+            self.routeables[sid].clear()
+
+        self.routeables[sid] = list(set(self.routeables[sid]+updated))
+
+        if self.routeables[sid] != change:
+            self.rebuildRoutes()
+        
+
+
+    def countRecieve(self, sid):
+        if sid != None:
+            self.updateRouteable(self.mysid, [sid])
+            self.known.add(sid)
+
+
+
 
 
     def newSession(self, sid, sessionID):
@@ -70,6 +98,8 @@ class RouteBuilder:
             
             
     def getRoute(self, destination, onlyReturnActiveSessions=False):
+        if destination in self.routeables[self.mysid]:
+            return [destination]
 
         if self.builtRoutes.get(destination):
             routes = self.builtRoutes[destination].copy()
@@ -80,6 +110,12 @@ class RouteBuilder:
                 if len(routes) > 0:
                     return sr.choice(routes)
         return []
+
+    def displayRoutes(self):
+        self.rebuildRoutes()
+        plt.cla()
+        nx.draw(self.G, with_labels=True)
+        plt.show()
 
         
 
@@ -118,5 +154,7 @@ class AirspaceRouteBuilder:
 
 
     def displayRanges(self):
+        plt.cla()
         nx.draw(self.G, with_labels=True)
         plt.show()
+        plt.pause(0.1)

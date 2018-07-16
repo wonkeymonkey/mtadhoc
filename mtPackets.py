@@ -32,4 +32,7 @@ class Packet:
             
         header['dst'] = routing[0]
         header['src'] = router.mysid
+        if not body.get('src'):
+            body['src'] = router.mysid
+            
         return json.dumps({'header': header, 'routing': routing, 'body': body})

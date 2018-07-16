@@ -50,7 +50,7 @@ class Airspace:
         while stopQueue.empty():
             try:
                 station()
-                sleep(0.2)
+                sleep(0.1)
             except KeyboardInterrupt:
                 pass
 
@@ -136,9 +136,9 @@ class Airspace:
                 for s in self.stations:
                     s()
                 self.processPackets()
-                sleep(0.2)
+                sleep(0.1)
         except KeyboardInterrupt:
-            pass
+            print("KeyboardInterrupt")
         finally:
             print("Stopping!")
             self._freeze()
@@ -176,7 +176,8 @@ class Airspace:
         d = json.loads(packet)
         src = sid
         dst = d.get('header').get('dst')
-        print(f"{src} --> {dst}")
+        typ = d.get('body').get('typ')
+        print(f"{src} --> {dst} [{typ}]")
 
         
         for destination in self.routes.inRange(sid):
@@ -199,15 +200,29 @@ class Airspace:
 
 
 if __name__ == "__main__":
-
+    
     
     a = Airspace()
-    a.makeStations( [(x,y) for x in range(0,400,100) for y in range(0,400,100)])
-    a.routes.displayRanges()
+    #a.makeStations( [(x,y) for x in range(0,400,100) for y in range(0,400,100)])
 
+    from random import randint
+    from matplotlib import pyplot as plt
+
+    
+    for x in range(0,300,50):
+        for y in range(0,100,50):
+                a.makeStations( (x,y) )
+    #a.routes.displayRanges()
+
+    plt.ion()
+    plt.show()
+    
+    a(300)
+    
+    
 
     #Call Airspace to run, accepts number of seconds to run as an argument
-    a(10)
+    #a(10)
     
 
 
